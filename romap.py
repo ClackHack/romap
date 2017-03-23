@@ -1,6 +1,29 @@
-import sys, console, time, socket, random, string, sys, uuid, random
+import sys, console, time, socket, random, string, sys, uuid, random, threading, urllib2
 from urllib2 import urlopen
 from datetime import timedelta
+
+def pinger_urllib(host):
+	t1 = time.time()
+	try:
+		urllib2.urlopen(host, timeout=3)
+		return (time.time() - t1) * 1000.0
+	except:
+		pass
+
+def deepscan(target="192.168.1.254"):
+	data = str(socket.gethostbyaddr(target))
+	data = data.replace(",","").replace("[","").replace("]","").replace("(","").replace(")","").replace("'","")
+	data = data.split()
+	print "-Name:",data[0]
+	print "-FQDN:",data[1]
+	print "-Provider:",data[2]
+	try:
+		ping = pinger_urllib("http://" + target)
+		print "-HTTP Response:",ping
+	except:
+		pass
+	print ""
+
 def credits():
 	console.set_color(1,1,0)
 	print "   _ __ ___  _ __ ___   __ _ _ __ "
@@ -60,9 +83,14 @@ def romap():
 		ip = network + str(end)
 		try:
 			info = socket.gethostbyaddr(ip)
-			info2 = socket.getfqdn()
-			print info[0], "--", info[2]
-			time.sleep(0.02)
+			info2 = str(info[2]).replace("[","").replace("]","").replace("'","")
+			print info[0], "--", info2
+			try:
+				if sys.argv[1] == "-d":
+					deepscan(info2)
+					time.sleep(0.05)
+			except:
+				pass
 		except:
 			pass
 	print ""
