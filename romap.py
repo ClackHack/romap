@@ -2,6 +2,42 @@ import sys, console, time, socket, random, string, sys, uuid, random, threading,
 from urllib2 import urlopen
 from datetime import timedelta
 
+ssdpsrc = { "ip_address" : "239.255.255.250",
+"port" : 1900,
+"mx"   : 10,
+"st"   : "ssdp:all" }
+
+exptpack1 = """M-SEARCH * HTTP/1.1
+HOST: {ip_address}:{port}
+MAN: "ssdp:discover"
+ST: uuid:`reboot`
+MX: 2
+""".replace("\n", "\r\n").format(**ssdpsrc) + "\r\n"
+
+ssdpre = """M-SEARCH * HTTP/1.1
+HOST: {ip_address}:{port}
+MAN: "ssdp:discover"
+MX: {mx}
+ST: {st}
+""".replace("\n", "\r\n").format(**ssdpsrc) + "\r\n"
+
+def discover(match="", timeout=2):
+	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+	s.sendto(ssdpre, (ssdpsrc["ip_address"], ssdpsrc["port"]))
+	s.settimeout(timeout)
+	responses = []
+	print ""
+	try:
+		while True:
+			response = s.recv(1000)
+			if match in response:
+				print response
+				responses.append(response)
+	except:
+		pass
+	return responses
+
 def pinger_urllib(host):
 	t1 = time.time()
 	try:
@@ -10,7 +46,7 @@ def pinger_urllib(host):
 	except:
 		pass
 
-def deepscan(target="192.168.1.254"):
+def deepscan(target):
 	data = str(socket.gethostbyaddr(target))
 	data = data.replace(",","").replace("[","").replace("]","").replace("(","").replace(")","").replace("'","")
 	data = data.split()
@@ -99,9 +135,15 @@ def romap():
 	times = str(timedelta(seconds=elapsed_time))
 	sys.stdout.write("Time Elapsed: ")
 	sys.stdout.write(str(times))
-	print "\n"
-def netstat():
-	print "In Progress"
+	try:
+		if sys.argv[2] == "-ap":
+			print "\n"
+			discover()
+	except:
+		pass
+	print "\n\npython romap.py -d -ap"
+	print " -d  :  Detailed Scan"
+	print " -ap :  Access Point Scan"
+
 credits()
 romap()
-#netstat()
