@@ -1,6 +1,27 @@
-import sys, console, time, socket, random, string, sys, uuid, random, threading, urllib2
+import sys, console, time, socket, random, string, sys, uuid, random, urllib2, argparse, ssl
 from urllib2 import urlopen
 from datetime import timedelta
+socket.setdefaulttimeout(2)
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-s","--ssl",help="Grabs SSL Certificates", action="store_true")
+parser.add_argument("-l","--log",help="Logs scan to file")
+parser.add_argument("-a","--accesspoint",help="Locates all sub access points", action="store_true")
+parser.add_argument("-d","--detail",help="Device Detail Information", action="store_true")
+args = parser.parse_args()
+
+if not args.ssl or not args.log:
+	print "\npython romap.py -d -a -s -l lastscan.txt\n"
+	print " -d  :  Detailed Scan"
+	print " -ap :  Access Point Scan"
+	print " -s  :  Grab SSL Certs"
+	print " -l  :  Logs Scans To File\n"
+	time.sleep(2)
+
+sl = args.ssl
+log = args.log
+acp = args.accesspoint
+dtl = args.detail
 
 ssdpsrc = { "ip_address" : "239.255.255.250",
 "port" : 1900,
@@ -33,6 +54,10 @@ def discover(match="", timeout=2):
 			response = s.recv(1000)
 			if match in response:
 				print response
+				if len(log) > 2:
+					f = open(log,"a")
+					f.write(response)
+					f.close()
 				responses.append(response)
 	except:
 		pass
@@ -56,9 +81,29 @@ def deepscan(target):
 	try:
 		ping = pinger_urllib("http://" + target)
 		print "-HTTP Response:",ping
+		if len(log) > 2:
+			f = open(log,"a")
+			f.write("\n-Name:"+data[0] + "\n")
+			f.write("-FQDN:"+data[1] + "\n")
+			f.write("-Provider:"+data[2] + "\n")
 	except:
 		pass
 	print ""
+
+def sslc(host):
+	try:
+		s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+		host = host.replace("http://","")
+		s.connect((host,443))
+		temp = ssl.get_server_certificate((host,443))
+		print "-Has Certificate"
+		s.close()
+		if len(log) > 2:
+			f = open(log,"a")
+			f.write("\n" + temp + "\n")
+			f.close()
+	except:
+		pass
 
 def credits():
 	console.set_color(1,1,0)
@@ -122,7 +167,15 @@ def romap():
 			info2 = str(info[2]).replace("[","").replace("]","").replace("'","")
 			print info[0], "--", info2
 			try:
-				if sys.argv[1] == "-d":
+				if len(log) > 2:
+					f = open(log,"a")
+					f.write(str(info[0])+" -- "+str(info2)+ "\n")
+			except:
+				pass
+			if sl:
+				sslc(info2)
+			try:
+				if dtl:
 					deepscan(info2)
 					time.sleep(0.05)
 			except:
@@ -136,14 +189,11 @@ def romap():
 	sys.stdout.write("Time Elapsed: ")
 	sys.stdout.write(str(times))
 	try:
-		if sys.argv[2] == "-ap":
+		if acp:
 			print "\n"
 			discover()
 	except:
 		pass
-	print "\n\npython romap.py -d -ap"
-	print " -d  :  Detailed Scan"
-	print " -ap :  Access Point Scan"
 
 credits()
 romap()
