@@ -1,27 +1,40 @@
 import sys, console, time, socket, random, string, sys, uuid, random, urllib2, argparse, ssl
+from datetime import datetime
 from urllib2 import urlopen
 from datetime import timedelta
-socket.setdefaulttimeout(2)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-s","--ssl",help="Grabs SSL Certificates", action="store_true")
 parser.add_argument("-l","--log",help="Logs scan to file")
-parser.add_argument("-a","--accesspoint",help="Locates all sub access points", action="store_true")
+parser.add_argument("-a","--accesspoint",help="Locate access points", action="store_true")
 parser.add_argument("-d","--detail",help="Device Detail Information", action="store_true")
+parser.add_argument("-H","--Host",help="Scan Selective Target")
+parser.add_argument("-R","--Range",help="Port Range For -H",default="500")
+parser.add_argument("-t","--timeout",help="Set timeout",default=2,type=int)
+parser.add_argument("-m","--mid",help="Second IP Range 0.0.x.0",default=1,type=int)
+parser.add_argument("-n","--nohelp",help="Hides Autohelp\n",action="store_true")
 args = parser.parse_args()
 
-if not args.ssl or not args.log:
-	print "\npython romap.py -d -a -s -l lastscan.txt\n"
-	print " -d  :  Detailed Scan"
-	print " -ap :  Access Point Scan"
-	print " -s  :  Grab SSL Certs"
-	print " -l  :  Logs Scans To File\n"
+if not args.log or not args.Host:
+	print ""
+	console.set_font("Menlo",11.4)
+	if args.nohelp:
+		pass
+	else:
+		parser.print_help()
+	console.set_font()
 	time.sleep(2)
 
 sl = args.ssl
 log = args.log
 acp = args.accesspoint
 dtl = args.detail
+hst = args.Host
+rng = args.Range
+tot = args.timeout
+srng = args.mid
+
+socket.setdefaulttimeout(tot)
 
 ssdpsrc = { "ip_address" : "239.255.255.250",
 "port" : 1900,
@@ -46,7 +59,7 @@ def discover(match="", timeout=2):
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	s.sendto(ssdpre, (ssdpsrc["ip_address"], ssdpsrc["port"]))
-	s.settimeout(timeout)
+	s.settimeout(tot)
 	responses = []
 	print ""
 	try:
@@ -115,6 +128,32 @@ def credits():
 	console.set_color()
 	print " " * 2 + "Starting romap on %s\n" %(socket.gethostname())
 	time.sleep(1)
+
+def scanport(target):
+	t1 = datetime.now()
+	print "Scanning: "+target+":1-"+rng+"\n"
+	try:
+		for port in range(1,int(rng)+1):
+			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			result = s.connect_ex((target, port))
+			time.sleep(0.03)
+			if result == 0:
+				print "Port {}: Open".format(port)
+			s.close()
+	except KeyboardInterrupt:
+		print "Received Ctrl+C"
+		sys.exit()
+	except socket.gaierror:
+		print "Hostname could not be resolved. Exiting"
+		sys.exit()
+	except socket.error:
+		print "Couldn't connect to server"
+		sys.exit()
+	t2 = datetime.now()
+	total =  t2 - t1
+	print "\nScanning Complete ", total
+	sys.exit()
+
 def romap():
 	start_time = time.time()
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -156,32 +195,34 @@ def romap():
 	print ""
 	s.close()
 	host = host.split(".")
-	host[3] = str(0)
+	host[3] = "%s"
+	host[2] = "%s"
 	host = ".".join(host)
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	network = str(host)
-	for end in range(256):
-		ip = network + str(end)
-		try:
-			info = socket.gethostbyaddr(ip)
-			info2 = str(info[2]).replace("[","").replace("]","").replace("'","")
-			print info[0], "--", info2
+	for mend in range(srng):
+		for end in range(256):
+			ip = network % (srng,end)
 			try:
-				if len(log) > 2:
-					f = open(log,"a")
-					f.write(str(info[0])+" -- "+str(info2)+ "\n")
+				info = socket.gethostbyaddr(ip)
+				info2 = 	str(info[2]).replace("[","").replace("]","").replace("'","")
+				print info[0], "--", info2
+				try:
+					if len(log) > 2:
+						f = open(log,"a")
+						f.write(str(info[0])+" -- "+str(info2)+ "\n")
+				except:
+					pass
+				if sl:
+					sslc(info2)
+				try:
+					if dtl:
+						deepscan(info2)
+						time.sleep(0.05)
+				except:
+					pass
 			except:
 				pass
-			if sl:
-				sslc(info2)
-			try:
-				if dtl:
-					deepscan(info2)
-					time.sleep(0.05)
-			except:
-				pass
-		except:
-			pass
 	print ""
 	elapsed_time = time.time() - start_time
 	time.sleep(0.5)
@@ -196,4 +237,9 @@ def romap():
 		pass
 
 credits()
+try:
+	if len(hst) > 0:
+		scanport(hst)
+except:
+	pass
 romap()
