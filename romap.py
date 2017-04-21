@@ -11,7 +11,7 @@ parser.add_argument("-d","--detail",help="Device Detail Information", action="st
 parser.add_argument("-H","--Host",help="Scan Selective Target")
 parser.add_argument("-R","--Range",help="Port Range For -H",default="500")
 parser.add_argument("-t","--timeout",help="Set timeout",default=2,type=int)
-parser.add_argument("-m","--mid",help="Second IP Range 0.0.x.0",default=1,type=int)
+parser.add_argument("-m","--mid",help="Second IP Range [17-62]",default="1-2")
 parser.add_argument("-n","--nohelp",help="Hides Autohelp\n",action="store_true")
 args = parser.parse_args()
 
@@ -195,14 +195,15 @@ def romap():
 	print ""
 	s.close()
 	host = host.split(".")
+	bkmid = host[2]
 	host[3] = "%s"
 	host[2] = "%s"
 	host = ".".join(host)
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	network = str(host)
-	for mend in range(srng):
+	if args.mid == "1-2":
 		for end in range(256):
-			ip = network % (srng,end)
+			ip = network % (bkmid,end)
 			try:
 				info = socket.gethostbyaddr(ip)
 				info2 = 	str(info[2]).replace("[","").replace("]","").replace("'","")
@@ -223,6 +224,31 @@ def romap():
 					pass
 			except:
 				pass
+	if args.mid != "1-2":
+		srng = args.mid.split("-")
+		for mend in range(int(srng[0]),int(srng[1])+1):
+			for end in range(256):
+				ip = network % (mend,end)
+				try:
+					info = socket.gethostbyaddr(ip)
+					info2 = 	str(info[2]).replace("[","").replace("]","").replace("'","")
+					print info[0], "--", info2
+					try:
+						if len(log) > 2:
+							f = open(log,"a")
+							f.write(str(info[0])+" -- "+str(info2)+ "\n")
+					except:
+						pass
+					if sl:
+						sslc(info2)
+					try:
+						if dtl:
+							deepscan(info2)
+							time.sleep(0.05)
+					except:
+						pass
+				except:
+					pass
 	print ""
 	elapsed_time = time.time() - start_time
 	time.sleep(0.5)
