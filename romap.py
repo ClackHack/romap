@@ -9,7 +9,7 @@ parser.add_argument("-l","--log",help="Logs scan to file")
 parser.add_argument("-a","--accesspoint",help="Locate access points", action="store_true")
 parser.add_argument("-d","--detail",help="Device Detail Information", action="store_true")
 parser.add_argument("-H","--Host",help="Scan Selective Target")
-parser.add_argument("-R","--Range",help="Port Range For -H",default="500")
+parser.add_argument("-P","--Range",help="Port Range For -H",default="500")
 parser.add_argument("-t","--timeout",help="Set timeout",default=2,type=int)
 parser.add_argument("-m","--mid",help="Second IP Range [17-62]",default="1-2")
 parser.add_argument("-n","--nohelp",help="Hides Autohelp\n",action="store_true")
@@ -22,6 +22,7 @@ if not args.log or not args.Host:
 		pass
 	else:
 		parser.print_help()
+		print "Examples:\nromap.py -n -d -s -m 1-13 -t 1 -l log.txt\nromap.py -H 192.168.1.254 -P 1000\nromap.py -n"
 	console.set_font()
 	time.sleep(2)
 
@@ -155,7 +156,6 @@ def scanport(target):
 	sys.exit()
 
 def romap():
-	start_time = time.time()
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.connect(("google.com", 80))
 	host = s.getsockname()[0]
@@ -172,28 +172,27 @@ def romap():
 	time.sleep(0.4)
 	print "LAN: %s" %(lan)
 	time.sleep(0.4)
-	print "RTT: %s" %("0.0.0.0")
-	time.sleep(0.4)
 	print "MAC: %s" %(mac)
 	time.sleep(0.4)
 	print "PUB: %s" %(my_ip)
 	time.sleep(0.4)
 	print(uuid.uuid5(uuid.NAMESPACE_DNS, "0.0.0.0"))
-	time.sleep(0.6)
+	time.sleep(0.4)
 	byte = random._urandom(16)
 	print(uuid.UUID(bytes=byte))
-	time.sleep(0.6)
+	time.sleep(0.4)
 	print(uuid.uuid4())
-	time.sleep(0.6)
+	time.sleep(0.4)
 	print(uuid.uuid3(uuid.NAMESPACE_DNS, "0.0.0.0"))
-	time.sleep(0.6)
+	time.sleep(0.4)
 	print(uuid.uuid1())
-	time.sleep(0.6)
+	time.sleep(0.4)
 	byte = random._urandom(16)
 	print(uuid.UUID(bytes=byte))
-	time.sleep(0.8)
+	time.sleep(0.4)
 	print ""
 	s.close()
+	start_time = time.time()
 	host = host.split(".")
 	bkmid = host[2]
 	host[3] = "%s"
