@@ -1,4 +1,4 @@
-import sys, console, time, socket, random, string, sys, uuid, random, urllib2, argparse, ssl
+import sys, console, time, socket, random, string, sys, uuid, random, urllib2, argparse, ssl, os, inspect, re
 from datetime import datetime
 from urllib2 import urlopen
 from datetime import timedelta
@@ -7,10 +7,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-s","--ssl",help="Grabs SSL Certificates", action="store_true")
 parser.add_argument("-l","--log",help="Logs scan to file")
 parser.add_argument("-a","--accesspoint",help="Locate access points", action="store_true")
+parser.add_argument("-p","--public",help="Scan Public Addresses",type=str,default="")
 parser.add_argument("-d","--detail",help="Device Detail Information", action="store_true")
 parser.add_argument("-H","--Host",help="Scan Selective Target")
 parser.add_argument("-P","--Range",help="Port Range For -H",default="500")
 parser.add_argument("-t","--timeout",help="Set timeout",default=2,type=int)
+parser.add_argument("-D","--Direct",help="Directly Scan Device",default="",type=str)
 parser.add_argument("-m","--mid",help="Second IP Range [17-62]",default="1-2")
 parser.add_argument("-n","--nohelp",help="Hides Autohelp\n",action="store_true")
 args = parser.parse_args()
@@ -34,6 +36,16 @@ hst = args.Host
 rng = args.Range
 tot = args.timeout
 srng = args.mid
+dv = args.Direct
+
+try:
+	if len(args.public) > 1:
+		console.set_color(1,0,0)
+		print "Warning: Scanning Public IPs may appear as an attack to the hosts being scanned!"
+		time.sleep(3)
+		console.set_font()
+except:
+	pass
 
 socket.setdefaulttimeout(tot)
 
@@ -81,7 +93,9 @@ def pinger_urllib(host):
 	t1 = time.time()
 	try:
 		urllib2.urlopen(host, timeout=3)
-		return (time.time() - t1) * 1000.0
+		elapsed_time = time.time() - t1
+		timesq = str(timedelta(seconds=elapsed_time))
+		return (timesq)
 	except:
 		pass
 
@@ -102,7 +116,6 @@ def deepscan(target):
 			f.write("-Provider:"+data[2] + "\n")
 	except:
 		pass
-	print ""
 
 def sslc(host):
 	try:
@@ -132,7 +145,7 @@ def credits():
 
 def scanport(target):
 	t1 = datetime.now()
-	print "Scanning: "+target+":1-"+rng+"\n"
+	print "Scanning: "+target+":1-"+rng
 	try:
 		for port in range(1,int(rng)+1):
 			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -152,10 +165,23 @@ def scanport(target):
 		sys.exit()
 	t2 = datetime.now()
 	total =  t2 - t1
-	print "\nScanning Complete ", total
+	print "Scanning Complete ", total
+	sys.exit()
+
+try:
+	if len(args.Direct) > 1:
+		deepscan(dv)
+		scanport(dv)
+except:
 	sys.exit()
 
 def romap():
+	path1 = os.path.abspath(inspect.stack()[0][1])
+	path1 = re.sub(r'.*ents/', '', path1)
+	path1 = "pythonista3://" + path1
+	path1 = path1.replace("<string>","")
+	path1 = path1.replace("romap.py","romap.py?action=run&argv=-n&argv=-P&argv=")
+	path1 = path1 + rng + "&argv=-t&argv=" + str(tot) + "&argv=-D&argv="
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.connect(("google.com", 80))
 	host = s.getsockname()[0]
@@ -193,6 +219,11 @@ def romap():
 	print ""
 	s.close()
 	start_time = time.time()
+	try:
+		if len(args.public) > 1:
+			host = args.public
+	except:
+		pass
 	host = host.split(".")
 	bkmid = host[2]
 	host[3] = "%s"
@@ -200,13 +231,18 @@ def romap():
 	host = ".".join(host)
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	network = str(host)
+	td = 0
 	if args.mid == "1-2":
 		for end in range(256):
 			ip = network % (bkmid,end)
 			try:
 				info = socket.gethostbyaddr(ip)
 				info2 = 	str(info[2]).replace("[","").replace("]","").replace("'","")
-				print info[0], "--", info2
+				info3 = info[0]+" -- "
+				sys.stdout.write(info3)
+				console.write_link(info2,path1+info2)
+				td = td + 1
+				print ""
 				try:
 					if len(log) > 2:
 						f = open(log,"a")
@@ -254,6 +290,7 @@ def romap():
 	times = str(timedelta(seconds=elapsed_time))
 	sys.stdout.write("Time Elapsed: ")
 	sys.stdout.write(str(times))
+	print "\nTotal Device(s) Found:",td
 	try:
 		if acp:
 			print "\n"
