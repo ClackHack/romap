@@ -14,7 +14,8 @@ parser.add_argument("-P","--Range",help="Port Range For -H",default="500")
 parser.add_argument("-t","--timeout",help="Set timeout",default=2,type=int)
 parser.add_argument("-D","--Direct",help="Directly Scan Device",default="",type=str)
 parser.add_argument("-m","--mid",help="Second IP Range [17-62]",default="1-2")
-parser.add_argument("-n","--nohelp",help="Hides Autohelp\n",action="store_true")
+parser.add_argument("-n","--nohelp",help="Hides Autohelp",action="store_true")
+parser.add_argument("-S","--Search",help="Search For Port While Scanning\n\n",type=int)
 args = parser.parse_args()
 
 if not args.log or not args.Host:
@@ -37,6 +38,11 @@ rng = args.Range
 tot = args.timeout
 srng = args.mid
 dv = args.Direct
+prt = args.Search
+
+srch = False
+if len(str(args.Search)) > 0:
+	srch = True
 
 try:
 	if len(args.public) > 1:
@@ -243,6 +249,12 @@ def romap():
 				console.write_link(info2,path1+info2)
 				td = td + 1
 				print ""
+				if srch:
+					s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+					result = s.connect_ex((info2, prt))
+					if result == 0:
+						print "Port {}: Open".format(prt)
+					s.close()
 				try:
 					if len(log) > 2:
 						f = open(log,"a")
@@ -267,7 +279,17 @@ def romap():
 				try:
 					info = socket.gethostbyaddr(ip)
 					info2 = 	str(info[2]).replace("[","").replace("]","").replace("'","")
-					print info[0], "--", info2
+					info3 = info[0]+" -- "
+					sys.stdout.write(info3)
+					console.write_link(info2,path1+info2)
+					td = td + 1
+					print ""
+					if srch:
+						s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+						result = s.connect_ex((info2, prt))
+						if result == 0:
+							print "Port {}: Open".format(prt)
+						s.close()
 					try:
 						if len(log) > 2:
 							f = open(log,"a")
