@@ -2,6 +2,7 @@ import sys, console, time, socket, random, string, sys, uuid, random, urllib2, a
 from datetime import datetime
 from urllib2 import urlopen
 from datetime import timedelta
+from objc_util import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-s","--ssl",help="Grabs SSL Certificates", action="store_true")
@@ -207,6 +208,14 @@ def romap():
 	print "MAC: %s" %(mac)
 	time.sleep(0.4)
 	print "PUB: %s" %(my_ip)
+	time.sleep(0.4)
+	CNCopyCurrentNetworkInfo = c.CNCopyCurrentNetworkInfo
+	CNCopyCurrentNetworkInfo.restype = c_void_p
+	CNCopyCurrentNetworkInfo.argtypes = [c_void_p]
+	wifiid = ObjCInstance(CNCopyCurrentNetworkInfo(ns('en0')))
+	print "SSID: %s" %(wifiid["SSID"])
+	time.sleep(0.4)
+	print "BSSID: %s" %(wifiid["BSSID"])
 	time.sleep(0.4)
 	print(uuid.uuid5(uuid.NAMESPACE_DNS, "0.0.0.0"))
 	time.sleep(0.4)
