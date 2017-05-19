@@ -1,3 +1,73 @@
+"""SavSec 2017 (c)
+
+Romap is a Network Scanning
+Utility coded in python and
+made for Pythonista!
+This application allows the
+user to preform fast, detailed
+scans on their or other's networks 
+and or subnets! Created by
+Russian Otter in SavSec / Savage 
+Security, Romap was made from
+scratch and has built up to be
+theeffective program it is today!
+The earily versions of this
+program were slow and did
+simple ip discovery, but now
+Romap has been through tons
+of changes and has gained tons
+of commands and abilities that
+make the program even more user
+friendly! Commands are simple and
+optional which allows the usage
+of this program to be extremely easy!
+
+-=-=-=- MIT License -=-=-=-
+
+Copyright (c) 2017 SavSec
+
+Permission is hereby granted,
+free of charge, to any person
+obtaining a copy of this
+software and associated
+documentation files (the
+"Software"), to deal in
+the Software without restriction, 
+including without limitation
+the rights to use, copy,
+modify, merge, publish, distribute, 
+sublicense, and/or sell
+copies of the Software,
+and to permit persons to whom the
+Software is furnished to do so,
+subject to the following
+conditions:
+
+The above copyright notice
+and this permission notice
+shall be included in all
+copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED
+"AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR
+A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE
+USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 import sys, console, time, socket, random, string, sys, uuid, random, urllib2, argparse, ssl, os, inspect, re
 from datetime import datetime
 from urllib2 import urlopen
@@ -14,7 +84,8 @@ parser.add_argument("-H","--Host",help="Scan Selective Target")
 parser.add_argument("-P","--Range",help="Port Range For -H",default="500")
 parser.add_argument("-t","--timeout",help="Set timeout",default=2,type=int)
 parser.add_argument("-D","--Direct",help="Directly Scan Device",default="",type=str)
-parser.add_argument("-m","--mid",help="Second IP Range [17-62]",default="1-2")
+parser.add_argument("-m","--mid",help="Second IP Range [17-62]",default="None")
+parser.add_argument("-M","--Mid",help="Third IP Range [17-62]",default="None")
 parser.add_argument("-n","--nohelp",help="Hides Autohelp",action="store_true")
 parser.add_argument("-S","--Search",help="Search For Port While Scanning\n\n",type=int)
 args = parser.parse_args()
@@ -243,11 +314,51 @@ def romap():
 	bkmid = host[2]
 	host[3] = "%s"
 	host[2] = "%s"
+	if args.Mid != "None":
+		host[1] = "%s"
 	host = ".".join(host)
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	network = str(host)
 	td = 0
-	if args.mid == "1-2":
+	if args.mid != "None" and args.Mid != "None":
+		srng = args.mid.split("-")
+		srng2 = args.Mid.split("-")
+		for tend in range(int(srng2[0]),int(srng2[1])+1):
+			for mend in range(int(srng[0]),int(srng[1])+1):
+				for end in range(256):
+					ip = network % (tend,mend,end)
+					try:
+						info = socket.gethostbyaddr(ip)
+						info2 = 	str(info[2]).replace("[","").replace("]","").replace("'","")
+						info3 = info[0]+" -- "
+						sys.stdout.write(info3)
+						console.write_link(info2,path1+info2)
+						td = td + 1
+						print ""
+						try:
+							if len(log) > 2:
+								f = open(log,"a")
+								f.write(str(info[0])+" -- "+str(info2)+ "\n")
+						except:
+							pass
+						if srch:
+							s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+							result = s.connect_ex((info2, prt))
+							if result == 0:
+								print "Port {}: Open".format(prt)
+							s.close()
+						if sl:
+							sslc(info2)
+						try:
+							if dtl:
+								deepscan(info2)
+								time.sleep(0.05)
+						except:
+							pass
+					except:
+						pass
+	
+	if args.mid == "None":
 		for end in range(256):
 			ip = network % (bkmid,end)
 			try:
@@ -280,7 +391,7 @@ def romap():
 					pass
 			except:
 				pass
-	if args.mid != "1-2":
+	if args.mid != "None" and args.Mid == "None":
 		srng = args.mid.split("-")
 		for mend in range(int(srng[0]),int(srng[1])+1):
 			for end in range(256):
