@@ -94,7 +94,7 @@ __author__ = "RussianOtter"
 __status__ = "Finished"
 __version__ = "v3.4.7"
 
-if not args.log or not args.Host:
+if not args.nohelp:
 	print ""
 	console.set_font("Menlo",11.4)
 	if args.nohelp:
