@@ -1,4 +1,5 @@
-"""SavSec 2017 (c)
+"""
+Made By: Russian Otter
 
 Romap is a Network Scanning
 Utility coded in python and
@@ -10,7 +11,7 @@ and or subnets! Created by
 Russian Otter in SavSec / Savage 
 Security, Romap was made from
 scratch and has built up to be
-theeffective program it is today!
+the effective program it is today!
 The earily versions of this
 program were slow and did
 simple ip discovery, but now
@@ -89,6 +90,9 @@ parser.add_argument("-M","--Mid",help="Third IP Range [17-62]",default="None")
 parser.add_argument("-n","--nohelp",help="Hides Autohelp",action="store_true")
 parser.add_argument("-S","--Search",help="Search For Port While Scanning\n\n",type=int)
 args = parser.parse_args()
+__author__ = "RussianOtter"
+__status__ = "Finished"
+__version__ = "v3.4.7"
 
 if not args.log or not args.Host:
 	print ""
@@ -147,6 +151,14 @@ ST: {st}
 """.replace("\n", "\r\n").format(**ssdpsrc) + "\r\n"
 
 def discover(match="", timeout=2):
+	"""
+	The discover code is
+	used when searching for
+	upnp devices! UPnP scanning
+	can allow you to find
+	vulnerable devices on the
+	network!
+	"""
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	s.sendto(ssdpre, (ssdpsrc["ip_address"], ssdpsrc["port"]))
@@ -168,6 +180,9 @@ def discover(match="", timeout=2):
 	return responses
 
 def pinger_urllib(host):
+	"""
+	Simple urllib ping test
+	"""
 	t1 = time.time()
 	try:
 		urllib2.urlopen(host, timeout=3)
@@ -178,6 +193,11 @@ def pinger_urllib(host):
 		pass
 
 def deepscan(target):
+	"""
+	DeepScan is a verbose
+	tool used to gather more
+	information about a device!
+	"""
 	data = str(socket.gethostbyaddr(target))
 	data = data.replace(",","").replace("[","").replace("]","").replace("(","").replace(")","").replace("'","")
 	data = data.split()
@@ -186,7 +206,7 @@ def deepscan(target):
 	print "-Provider:",data[2]
 	try:
 		ping = pinger_urllib("http://" + target)
-		print "-HTTP Response:",ping
+		print "-HTTP Response:",ping,"ms"
 		if len(log) > 2:
 			f = open(log,"a")
 			f.write("\n-Name:"+data[0] + "\n")
@@ -196,6 +216,16 @@ def deepscan(target):
 		pass
 
 def sslc(host):
+	"""
+	This is the basic
+	function used to grab
+	ssl certificates from
+	devices on the network
+	which have ssl setup!
+	You can activate
+	this function with
+	the argument: -S
+	"""
 	try:
 		s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 		host = host.replace("http://","")
@@ -211,6 +241,9 @@ def sslc(host):
 		pass
 
 def credits():
+	"""
+	Copyright (c) Romap v3.4.7 - SavSec
+	"""
 	console.set_color(1,1,0)
 	print "   _ __ ___  _ __ ___   __ _ _ __ "
 	print "  | '__/ _ \| '_ ` _ \ / _` | '_ \ "
@@ -222,6 +255,13 @@ def credits():
 	time.sleep(1)
 
 def scanport(target):
+	"""
+	This is the port scanner
+	for Romap! You can change
+	the maxium amount of ports
+	to scan with the argument:
+	-P [Max Port]
+	"""
 	t1 = datetime.now()
 	print "Scanning: "+target+":1-"+rng
 	try:
@@ -254,6 +294,18 @@ except:
 	sys.exit()
 
 def romap():
+	"""
+	This is the main script
+	inside Romap that processes
+	the scans and controls the
+	outputs. One of the most 
+	useful peices of code inside
+	this script, allows ip
+	addresses to be clicked
+	on after scanning. When 
+	the ip is clicked romap will
+	run a scan on that ip!
+	"""
 	path1 = os.path.abspath(inspect.stack()[0][1])
 	path1 = re.sub(r'.*ents/', '', path1)
 	path1 = "pythonista3://" + path1
