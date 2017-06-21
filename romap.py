@@ -130,6 +130,17 @@ except:
 	pass
 
 socket.setdefaulttimeout(tot)
+def getIPv6Addr(input):
+	try:
+		ipv6 = socket.getaddrinfo(input, None, socket.AF_INET6)[0][4][1].encode("hex")
+		n = 4
+		ipv6 = ipv6[12::]
+		ipv6 = [ipv6[i:i+n] for i in range(0, len(ipv6), n)]
+		ipv6 = ipv6[0] + ":" + ipv6[1] + ":" +ipv6[2] + "::" + ipv6[3]
+	except:
+		ipv6 = "None"
+		pass
+	return ipv6
 
 ssdpsrc = { "ip_address" : "239.255.255.250",
 "port" : 1900,
@@ -204,6 +215,7 @@ def deepscan(target):
 	print "-Name:",data[0]
 	print "-FQDN:",data[1]
 	print "-Provider:",data[2]
+	print "IPv6: %s" %(getIPv6Addr(my_ip))
 	try:
 		ping = pinger_urllib("http://" + target)
 		print "-HTTP Response:",ping,"ms"
@@ -331,6 +343,8 @@ def romap():
 	print "MAC: %s" %(mac)
 	time.sleep(0.4)
 	print "PUB: %s" %(my_ip)
+	time.sleep(0.4)
+	print "IPv6: %s" %(getIPv6Addr(my_ip))
 	time.sleep(0.4)
 	CNCopyCurrentNetworkInfo = c.CNCopyCurrentNetworkInfo
 	CNCopyCurrentNetworkInfo.restype = c_void_p
