@@ -89,10 +89,12 @@ parser.add_argument("-m","--mid",help="Second IP Range [17-62]",default="None")
 parser.add_argument("-M","--Mid",help="Third IP Range [17-62]",default="None")
 parser.add_argument("-n","--nohelp",help="Hides Autohelp",action="store_true")
 parser.add_argument("-S","--Search",help="Search For Port While Scanning\n\n",type=int)
+parser.add_argument("--rfc",action="store_true",help="Show RFC 3056 IPv6 address")
 args = parser.parse_args()
+
 __author__ = "RussianOtter"
 __status__ = "Finished"
-__version__ = "v3.4.7"
+__version__ = "v3.5.2"
 
 if not args.nohelp:
 	print ""
@@ -141,6 +143,10 @@ def getIPv6Addr(input):
 		ipv6 = "None"
 		pass
 	return ipv6
+
+def rfc3056(ip):
+	nmb = list(map(int, ip.split('.')))
+	return '2002:{:02x}{:02x}:{:02x}{:02x}::'.format(*nmb)
 
 ssdpsrc = { "ip_address" : "239.255.255.250",
 "port" : 1900,
@@ -215,7 +221,8 @@ def deepscan(target):
 	print "-Name:",data[0]
 	print "-FQDN:",data[1]
 	print "-Provider:",data[2]
-	print "IPv6: %s" %(getIPv6Addr(my_ip))
+	print "-RFC IPv6:",rfc3056(target)
+	print "-IPv6:",getIPv6Addr(target)
 	try:
 		ping = pinger_urllib("http://" + target)
 		print "-HTTP Response:",ping,"ms"
@@ -223,6 +230,8 @@ def deepscan(target):
 			f = open(log,"a")
 			f.write("\n-Name:"+data[0] + "\n")
 			f.write("-FQDN:"+data[1] + "\n")
+			f.write("-RFC:"+rfc3056(target) + "\n")
+			f.write("-IPv6: "+getIPv6Addr(target) + "\n")
 			f.write("-Provider:"+data[2] + "\n")
 	except:
 		pass
@@ -254,7 +263,7 @@ def sslc(host):
 
 def credits():
 	"""
-	Copyright (c) Romap v3.4.7 - SavSec
+	Copyright (c) Romap v3.5.2 - SavSec
 	"""
 	console.set_color(1,1,0)
 	print "   _ __ ___  _ __ ___   __ _ _ __ "
@@ -295,7 +304,7 @@ def scanport(target):
 		sys.exit()
 	t2 = datetime.now()
 	total =  t2 - t1
-	print "Scanning Complete ", total
+	print "Scanning Complete", total
 	sys.exit()
 
 try:
@@ -325,8 +334,11 @@ def romap():
 	path1 = path1.replace("romap.py","romap.py?action=run&argv=-n&argv=-P&argv=")
 	path1 = path1 + rng + "&argv=-t&argv=" + str(tot) + "&argv=-D&argv="
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	s.connect(("google.com", 80))
-	host = s.getsockname()[0]
+	try:
+		s.connect(("google.com", 80))
+		host = s.getsockname()[0]
+	except:
+		host = "N/A"
 	lan = host
 	try:
 		my_ip = "N/A"
@@ -346,6 +358,7 @@ def romap():
 	time.sleep(0.4)
 	print "IPv6: %s" %(getIPv6Addr(my_ip))
 	time.sleep(0.4)
+	print "RFC IPv6: %s" %(rfc3056(my_ip))
 	CNCopyCurrentNetworkInfo = c.CNCopyCurrentNetworkInfo
 	CNCopyCurrentNetworkInfo.restype = c_void_p
 	CNCopyCurrentNetworkInfo.argtypes = [c_void_p]
