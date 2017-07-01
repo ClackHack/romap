@@ -76,7 +76,6 @@ from datetime import timedelta
 from objc_util import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-s","--ssl",help="Grabs SSL Certificates", action="store_true")
 parser.add_argument("-l","--log",help="Logs scan to file")
 parser.add_argument("-a","--accesspoint",help="Locate access points", action="store_true")
 parser.add_argument("-p","--public",help="Scan Public Addresses",type=str,default="")
@@ -89,12 +88,11 @@ parser.add_argument("-m","--mid",help="Second IP Range [17-62]",default="None")
 parser.add_argument("-M","--Mid",help="Third IP Range [17-62]",default="None")
 parser.add_argument("-n","--nohelp",help="Hides Autohelp",action="store_true")
 parser.add_argument("-S","--Search",help="Search For Port While Scanning\n\n",type=int)
-parser.add_argument("--rfc",action="store_true",help="Show RFC 3056 IPv6 address")
 args = parser.parse_args()
 
 __author__ = "RussianOtter"
 __status__ = "Finished"
-__version__ = "v3.5.2"
+__version__ = "v3.7.6"
 
 if not args.nohelp:
 	print ""
@@ -107,7 +105,6 @@ if not args.nohelp:
 	console.set_font()
 	time.sleep(2)
 
-sl = args.ssl
 log = args.log
 acp = args.accesspoint
 dtl = args.detail
@@ -117,6 +114,11 @@ tot = args.timeout
 srng = args.mid
 dv = args.Direct
 prt = args.Search
+
+if log:
+	f = open(log,"a")
+	f.write("\n-=- Romap %s -=-\n" %__version__)
+	f.close()
 
 srch = False
 if len(str(args.Search)) > 0:
@@ -187,7 +189,7 @@ def discover(match="", timeout=2):
 			response = s.recv(1000)
 			if match in response:
 				print response
-				if len(log) > 2:
+				if log:
 					f = open(log,"a")
 					f.write(response)
 					f.close()
@@ -209,33 +211,6 @@ def pinger_urllib(host):
 	except:
 		pass
 
-def deepscan(target):
-	"""
-	DeepScan is a verbose
-	tool used to gather more
-	information about a device!
-	"""
-	data = str(socket.gethostbyaddr(target))
-	data = data.replace(",","").replace("[","").replace("]","").replace("(","").replace(")","").replace("'","")
-	data = data.split()
-	print "-Name:",data[0]
-	print "-FQDN:",data[1]
-	print "-Provider:",data[2]
-	print "-RFC IPv6:",rfc3056(target)
-	print "-IPv6:",getIPv6Addr(target)
-	try:
-		ping = pinger_urllib("http://" + target)
-		print "-HTTP Response:",ping,"ms"
-		if len(log) > 2:
-			f = open(log,"a")
-			f.write("\n-Name:"+data[0] + "\n")
-			f.write("-FQDN:"+data[1] + "\n")
-			f.write("-RFC:"+rfc3056(target) + "\n")
-			f.write("-IPv6: "+getIPv6Addr(target) + "\n")
-			f.write("-Provider:"+data[2] + "\n")
-	except:
-		pass
-
 def sslc(host):
 	"""
 	This is the basic
@@ -254,16 +229,44 @@ def sslc(host):
 		temp = ssl.get_server_certificate((host,443))
 		print "-Has Certificate"
 		s.close()
-		if len(log) > 2:
+		if log:
 			f = open(log,"a")
 			f.write("\n" + temp + "\n")
 			f.close()
 	except:
 		pass
 
+def deepscan(target):
+	"""
+	DeepScan is a verbose
+	tool used to gather more
+	information about a device!
+	"""
+	data = str(socket.gethostbyaddr(target))
+	data = data.replace(",","").replace("[","").replace("]","").replace("(","").replace(")","").replace("'","")
+	data = data.split()
+	print "-Name:",data[0]
+	print "-FQDN:",data[1]
+	print "-Provider:",data[2]
+	print "-RFC IPv6:",rfc3056(target)
+	print "-IPv6:",getIPv6Addr(target)
+	sslc(target)
+	try:
+		ping = pinger_urllib("http://" + target)
+		print "-HTTP Response:",ping,"ms"
+		if log:
+			f = open(log,"a")
+			f.write("\n-Name:"+data[0] + "\n")
+			f.write("-FQDN:"+data[1] + "\n")
+			f.write("-RFC:"+rfc3056(target) + "\n")
+			f.write("-IPv6: "+getIPv6Addr(target) + "\n")
+			f.write("-Provider:"+data[2] + "\n")
+	except:
+		pass
+
 def credits():
 	"""
-	Copyright (c) Romap v3.5.2 - SavSec
+	Copyright (c) Romap v3.7.6 - SavSec
 	"""
 	console.set_color(1,1,0)
 	print "   _ __ ___  _ __ ___   __ _ _ __ "
@@ -411,29 +414,25 @@ def romap():
 						info2 = 	str(info[2]).replace("[","").replace("]","").replace("'","")
 						info3 = info[0]+" -- "
 						sys.stdout.write(info3)
+						if log:
+							f = open(log,"a")
+							f.write(str(info[0])+" -- "+str(info2)+ "\n")
 						console.write_link(info2,path1+info2)
+						if dtl:
+							print "\n"
+							deepscan(info2)
+							print ""
+							time.sleep(0.05)
+						if sl:
+							sslc(info2)
 						td = td + 1
 						print ""
-						try:
-							if len(log) > 2:
-								f = open(log,"a")
-								f.write(str(info[0])+" -- "+str(info2)+ "\n")
-						except:
-							pass
 						if srch:
 							s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 							result = s.connect_ex((info2, prt))
 							if result == 0:
 								print "Port {}: Open".format(prt)
 							s.close()
-						if sl:
-							sslc(info2)
-						try:
-							if dtl:
-								deepscan(info2)
-								time.sleep(0.05)
-						except:
-							pass
 					except:
 						pass
 	
@@ -445,7 +444,15 @@ def romap():
 				info2 = 	str(info[2]).replace("[","").replace("]","").replace("'","")
 				info3 = info[0]+" -- "
 				sys.stdout.write(info3)
+				if log:
+						f = open(log,"a")
+						f.write(str(info[0])+" -- "+str(info2)+ "\n")
 				console.write_link(info2,path1+info2)
+				if dtl:
+					print "\n"
+					deepscan(info2)
+					print ""
+					time.sleep(0.05)
 				td = td + 1
 				print ""
 				if srch:
@@ -454,14 +461,6 @@ def romap():
 					if result == 0:
 						print "Port {}: Open".format(prt)
 					s.close()
-				try:
-					if len(log) > 2:
-						f = open(log,"a")
-						f.write(str(info[0])+" -- "+str(info2)+ "\n")
-				except:
-					pass
-				if sl:
-					sslc(info2)
 				try:
 					if dtl:
 						deepscan(info2)
@@ -480,7 +479,15 @@ def romap():
 					info2 = 	str(info[2]).replace("[","").replace("]","").replace("'","")
 					info3 = info[0]+" -- "
 					sys.stdout.write(info3)
+					if log:
+						f = open(log,"a")
+						f.write(str(info[0])+" -- "+str(info2)+ "\n")
 					console.write_link(info2,path1+info2)
+					if dtl:
+						print "\n"
+						deepscan(info2)
+						print ""
+						time.sleep(0.05)
 					td = td + 1
 					print ""
 					if srch:
@@ -489,14 +496,6 @@ def romap():
 						if result == 0:
 							print "Port {}: Open".format(prt)
 						s.close()
-					try:
-						if len(log) > 2:
-							f = open(log,"a")
-							f.write(str(info[0])+" -- "+str(info2)+ "\n")
-					except:
-						pass
-					if sl:
-						sslc(info2)
 					try:
 						if dtl:
 							deepscan(info2)
